@@ -34,8 +34,8 @@ _HOMEPAGE = "https://www.nlm.nih.gov/databases/download/pubmed_medline.html"
 
 _LICENSE = ""
 
-# _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
-_URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 2)]
+_URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
+# _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 2)]
 
 MONTHS = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10,
           'Nov': 11, 'Dec': 12}
@@ -61,7 +61,8 @@ def deepupdate(target, src):
             try:
                 v = MONTHS.get(v) if v in MONTHS else int(v)
             except Exception as e:
-                print(e)
+                logger.warning(e)
+                logger.debug(f"Failed to convert {v} to int for v={v} ; k={k} ; target={target}; src={src}")
                 pass
         if k in target and type(target[k]) != type(v):
             logger.warning(f"Ignoring field {k} it's a {type(v)} and we expect a {type(target[k])}")
@@ -378,7 +379,7 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                     try:
                         deepupdate(new_article, article)
                     except Exception as e:
-                        print(e)
+                        logger.warning(f"Exception {e}")
                         logger.warning(f"Ignoring article {article}, it is malformed")
                         continue
 
