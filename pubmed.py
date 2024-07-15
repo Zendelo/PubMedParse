@@ -17,7 +17,6 @@
 import copy
 import gzip
 import xml.etree.ElementTree as ET
-import pandas as pd
 
 import datasets
 
@@ -38,6 +37,9 @@ _LICENSE = ""
 # _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
 _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 2)]
 
+MONTHS = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10,
+          'Nov': 11, 'Dec': 12}
+
 
 # Copyright Ferry Boender, released under the MIT license.
 # Modified by @Narsil to handle more oddities
@@ -57,8 +59,9 @@ def deepupdate(target, src):
     for k, v in src.items():
         if k in target and isinstance(target[k], int) and isinstance(v, str):
             try:
-                v = int(v)
-            except Exception:
+                v = MONTHS.get(v) if v in MONTHS else int(v)
+            except Exception as e:
+                print(e)
                 pass
         if k in target and type(target[k]) != type(v):
             logger.warning(f"Ignoring field {k} it's a {type(v)} and we expect a {type(target[k])}")
@@ -104,38 +107,39 @@ def default_date():
 
 def default_inline_article():
     return {
-        'Journal': 'Journal',
+        'Journal': {'ISSN': '', 'JournalIssue': {'Volume': '', 'Issue': '', 'PubDate': default_date()}, 'Title': '',
+                    'ISOAbbreviation': ''},
         "Abstract": {"AbstractText": ""},
         "ArticleTitle": "",
         # 'Pagination': {'MedlinePgn': datasets.Value('string')},
-        "AuthorList": {"Author": []},
+        # "AuthorList": {"Author": []},
         "Language": "",
-        "GrantList": {
-            "Grant": [],
-        },
+        # "GrantList": {
+        #     "Grant": [],
+        # },
         "PublicationTypeList": {"PublicationType": []},
     }
 
 
 def default_article():
     return {
-        # "MedlineCitation": {
-        "PMID": 0,
-        "DateCompleted": default_date(),
-        "NumberOfReferences": 0,
-        "DateRevised": default_date(),
-        "Article": default_inline_article(),
-        # "MedlineJournalInfo": {"Country": ""},
-        # "ChemicalList": {"Chemical": []},
-        "CitationSubset": "",
-        # "MeshHeadingList": {"MeshHeading": []},
-        # },
-        # "PubmedData": {
-        "ArticleIdList": [{"ArticleId": []}],
-        "PublicationStatus": "",
-        "History": {"PubMedPubDate": []},
-        "ReferenceList": [],
-        # },
+        "MedlineCitation": {
+            "PMID": 0,
+            "DateCompleted": default_date(),
+            "NumberOfReferences": 0,
+            "DateRevised": default_date(),
+            "Article": default_inline_article(),
+            "MedlineJournalInfo": {"Country": "", "MedlineTA": "", "NlmUniqueID": "", "ISSNLinking": ""},
+            # "ChemicalList": {"Chemical": []},
+            # "CitationSubset": "",
+            # "MeshHeadingList": {"MeshHeading": []},
+        },
+        "PubmedData": {
+            "ArticleIdList": [{"ArticleId": []}],
+            "PublicationStatus": "",
+            # "History": {"PubMedPubDate": []},
+            # "ReferenceList": [],
+        },
     }
 
 
@@ -198,24 +202,24 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                 self.IGNORE_KEYS.add(key)
 
         # Filling defaults
-        if parentElement.tag == "MeshHeading" and "QualifierName" not in data:
-            data["QualifierName"] = ""
-        elif parentElement.tag == "Author":
-            if "ForeName" not in data:
-                data["ForeName"] = ""
-            if "Initials" not in data:
-                data["Initials"] = ""
-            if "LastName" not in data:
-                data["LastName"] = ""
-            if "CollectiveName" not in data:
-                data["CollectiveName"] = ""
-        elif parentElement.tag == "JournalIssue":
+        # if parentElement.tag == "MeshHeading" and "QualifierName" not in data:
+        #     data["QualifierName"] = ""
+        # elif parentElement.tag == "Author":
+        #     if "ForeName" not in data:
+        #         data["ForeName"] = ""
+        #     if "Initials" not in data:
+        #         data["Initials"] = ""
+        #     if "LastName" not in data:
+        #         data["LastName"] = ""
+        #     if "CollectiveName" not in data:
+        #         data["CollectiveName"] = ""
+        if parentElement.tag == "JournalIssue":
             if "Volume" not in data:
                 data["Volume"] = ""
             if "Issue" not in data:
                 data["Issue"] = ""
-        elif parentElement.tag == "Grant" and "GrantID" not in data:
-            data["GrantID"] = ""
+        # elif parentElement.tag == "Grant" and "GrantID" not in data:
+        #     data["GrantID"] = ""
 
         return {parentElement.tag: data}
 
@@ -228,30 +232,30 @@ class Pubmed(datasets.GeneratorBasedBuilder):
 
         # MeshHeading = {"DescriptorName": datasets.Value("string"), "QualifierName": datasets.Value("string")}
 
-        # MedlineJournalInfo = {
-        #     "Country": datasets.Value("string"),
-        #     # Too inconsistent
-        #     'MedlineTA': datasets.Value('string'),
-        #     'NlmUniqueID': datasets.Value('string'),
-        #     'ISSNLinking': datasets.Value('string'),
-        # },
+        MedlineJournalInfo = {
+            "Country": datasets.Value("string"),
+            # Too inconsistent
+            'MedlineTA': datasets.Value('string'),
+            'NlmUniqueID': datasets.Value('string'),
+            'ISSNLinking': datasets.Value('string'),
+        }
         # Chemical = {
         #     "RegistryNumber": datasets.Value("string"),
         #     "NameOfSubstance": datasets.Value("string"),
         # }
         # Too inconsistent in the data to be used
-        # Journal = {
-        # 'ISSN': datasets.Value('string'),
-        # 'JournalIssue': {
-        #     'Volume': datasets.Value('string'),
-        #     'Issue': datasets.Value('string'),
-        # 'PubDate': Date,
-        # 'Title': datasets.Value('string'),
-        # 'ISOAbbreviation': datasets.Value('string')
-        # }
-        Journal_title = datasets.Value('string')
-        Journal_iso = datasets.Value('string')
-        Journal_pubdate = Date
+        Journal = {
+            'ISSN': datasets.Value('string'),
+            'JournalIssue': {
+                'Volume': datasets.Value('string'),
+                'Issue': datasets.Value('string'),
+            },
+            'PubDate': Date,
+            'Title': datasets.Value('string'),
+            'ISOAbbreviation': datasets.Value('string')
+        }
+        # JournalTitle = datasets.Value("string"),
+        # JournalISOAbbreviation = datasets.Value("string"),
         # Author = {
         #     "LastName": datasets.Value("string"),
         #     "ForeName": datasets.Value("string"),
@@ -267,55 +271,41 @@ class Pubmed(datasets.GeneratorBasedBuilder):
         #     "Agency": datasets.Value("string"),
         #     "Country": datasets.Value("string"),
         # }
-        # Article = {
-        #     'Journal_title': Journal_title,
-        #     'Journal_iso': Journal_iso,
-        #     'Journal_pubdate': Journal_pubdate,
-        #     "Abstract": {"AbstractText": datasets.Value("string")},
-        #     "ArticleTitle": datasets.Value("string"),
+        Article = {
+            'Journal': Journal,
+            "Abstract": {"AbstractText": datasets.Value("string")},
+            "ArticleTitle": datasets.Value("string"),
             # Too inconistent
             # 'Pagination': {'MedlinePgn': datasets.Value('string')},
             # "AuthorList": {"Author": datasets.Sequence(Author)},
-            # "Language": datasets.Value("string"),
+            "Language": datasets.Value("string"),
             # "GrantList": {
             #     "Grant": datasets.Sequence(Grant),
             # },
-            # "PublicationTypeList": {"PublicationType": datasets.Sequence(datasets.Value("string"))},
-        # }
+            "PublicationTypeList": {"PublicationType": datasets.Sequence(datasets.Value("string"))},
+        }
         features = datasets.Features(
             {
-                # "MedlineCitation": {
-                "PMID": datasets.Value("int32"),
-                "DateCompleted": Date,
-                "NumberOfReferences": datasets.Value("int32"),
-                "DateRevised": Date,
-                # "Article": Article,
-                # "MedlineJournalInfo": MedlineJournalInfo,
-                # "ChemicalList": {"Chemical": datasets.Sequence(Chemical)},
-                # "CitationSubset": datasets.Value("string"),
-                # "MeshHeadingList": {
-                #     "MeshHeading": datasets.Sequence(MeshHeading),
-                # },
-                # },
-                # "PubmedData": {
-                "ArticleIdList": datasets.Sequence({"ArticleId": datasets.Sequence(datasets.Value("string"))}),
-                "PublicationStatus": datasets.Value("string"),
-                "History": {"PubMedPubDate": datasets.Sequence(Date)},
-                # "ReferenceList": datasets.Sequence(Reference),
-                # },
-                'Journal_title': Journal_title,
-                'Journal_iso': Journal_iso,
-                'Journal_pubdate': Journal_pubdate,
-                "Abstract": {"AbstractText": datasets.Value("string")},
-                "ArticleTitle": datasets.Value("string"),
-                # Too inconistent
-                # 'Pagination': {'MedlinePgn': datasets.Value('string')},
-                # "AuthorList": {"Author": datasets.Sequence(Author)},
-                "Language": datasets.Value("string"),
-                # "GrantList": {
-                #     "Grant": datasets.Sequence(Grant),
-                # },
-                "PublicationTypeList": {"PublicationType": datasets.Sequence(datasets.Value("string"))},
+                "MedlineCitation": {
+                    "PMID": datasets.Value("int32"),
+                    "DateCompleted": Date,
+                    "NumberOfReferences": datasets.Value("int32"),
+                    "DateRevised": Date,
+                    "Article": Article,
+                    "Journal": Journal,
+                    "MedlineJournalInfo": MedlineJournalInfo,
+                    # "ChemicalList": {"Chemical": datasets.Sequence(Chemical)},
+                    # "CitationSubset": datasets.Value("string"),
+                    # "MeshHeadingList": {
+                    #     "MeshHeading": datasets.Sequence(MeshHeading),
+                    # },
+                },
+                "PubmedData": {
+                    "ArticleIdList": datasets.Sequence({"ArticleId": datasets.Sequence(datasets.Value("string"))}),
+                    "PublicationStatus": datasets.Value("string"),
+                    # "History": {"PubMedPubDate": datasets.Sequence(Date)},
+                    # "ReferenceList": datasets.Sequence(Reference),
+                },
             }
         )
         self.fill_keys_from_features(features)
@@ -382,12 +372,13 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                     continue
 
                 for article in xmldict["PubmedArticleSet"]["PubmedArticle"]:
-                    self.update_citation(article)
+                    # self.update_citation(article)
                     new_article = default_article()
 
                     try:
                         deepupdate(new_article, article)
-                    except Exception:
+                    except Exception as e:
+                        print(e)
                         logger.warning(f"Ignoring article {article}, it is malformed")
                         continue
 
@@ -400,10 +391,11 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                     id_ += 1
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     builder = Pubmed()
-    builder.download_and_prepare('./data')
-    # dataset to pandas dataframe
-    dataset = builder.as_dataset()
-    print(dataset)
-    df = pd.DataFrame(dataset['train'])
+    builder.download_and_prepare(output_dir='data/pubmed',
+                                 base_path=None,
+                                 file_format="arrow",
+                                 num_proc=None,
+                                 storage_options=None)
+    print(builder.info)
