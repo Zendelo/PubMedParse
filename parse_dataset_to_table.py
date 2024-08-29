@@ -1,62 +1,99 @@
+from collections import defaultdict
+from time import time
+
 import datasets
 import pandas as pd
 from tqdm import tqdm
 
-# Load the dataset
-dataset = datasets.load_dataset("data/pubmed")
 
-# All 'MedlineCitation' keys:
-# ['PMID', 'DateCompleted', 'NumberOfReferences', 'DateRevised', 'Article',
-# 'MedlineJournalInfo', 'ChemicalList', 'CitationSubset', 'MeshHeadingList']
-# All 'PubmedData' keys:
-# ['ArticleIdList', 'PublicationStatus']
+# extract and merge the unique values from the journals_df into a dictionary with combined keys
+def extract_unique_journals(journals_df):
+    # drop the boolean column that doesn't contain any keys
+    jdf = journals_df.drop(columns=['Matched_ISSN'])
+    _dict = defaultdict(set)
+    # iterate over the columns and update the dictionary with the unique values
+    for col in jdf.columns:
+        if 'issn' in col.lower():
+            _dict['issn'].update(jdf[col].str.split(',').explode().str.strip())
+        elif 'title' in col.lower():
+            _dict['title'].update(jdf[col].str.strip())
+        elif 'abbr' in col.lower():
+            _dict['abbr'].update(jdf[col].str.strip())
+        elif 'id' in col.lower():
+            _dict['id'].update(jdf[col].str.strip())
+    return _dict
 
 
-# Article keys:
-# ['Abstract', 'ArticleTitle', 'AuthorList', 'Language', 'GrantList', 'PublicationTypeList']
+if __name__ == '__main__':
+    # Start the timer
+    start = time()
+    # Load the dataset
+    dataset = datasets.load_dataset("data/pubmed")
 
-journals_df = pd.read_csv('psy_journals_list.csv', header=0, sep=',')
+    # Load the journals list
+    journals_df = pd.read_csv('psy_journals_list.csv', header=0, sep=',')
 
-# Iterate over the dataset and create a table
-table = []
-count = 0
-missing_abstracts = 0
-_batch = 0
-for row in tqdm(dataset["train"]):
-    pmid = row['MedlineCitation']['PMID']
-    date_completed = row['MedlineCitation']['DateCompleted']['Year']
-    date_revised = row['MedlineCitation']['DateRevised']['Year']
+    # Extract unique values from the journals_df
+    match_dict = extract_unique_journals(journals_df)
 
-    article = row['MedlineCitation']['Article']
+    # Iterate over the dataset and create a table with only the matching journals
+    table = []
+    count = 0
+    missing_abstracts = 0
+    filtered_articles = 0
+    _batch = 0
+    for row in tqdm(dataset["train"]):
+        medline = row['MedlineCitation']
+        pmid = medline['PMID']
+        date_completed = medline['DateCompleted']['Year']
+        date_revised = medline['DateRevised']['Year']
 
-    abstract = article['Abstract']['AbstractText']
+        article = medline['Article']
+        journal = medline['Journal']
 
-    journal = article['Journal']
-    journal_title = journal['Title']
-    journal_issn = journal['ISSN']
-    journal_abbr_iso = journal['ISOAbbreviation']
+        article_abstract = article['Abstract']['AbstractText']
+        article_title = article['ArticleTitle']
+        article_language = article['Language']
 
-    journal_abbr_med = row['MedlineCitation']['MedlineJournalInfo']['MedlineTA']
+        article_journal = article['Journal']
+        article_journal_title = article_journal['Title']
+        article_journal_issn = article_journal['ISSN']
+        article_journal_abbr_iso = article_journal['ISOAbbreviation']
 
-    title = article['ArticleTitle']
-    language = article['Language']
+        journal_issn = journal['ISSN']
+        journal_title = journal['Title']
+        journal_isoabbr = journal['ISOAbbreviation']
+        journal_year = journal['PubDate']['Year']
 
-    if abstract:
-        count += 1
-        table.append(
-            dict(pmid=pmid,
-                 date_completed=date_completed,
-                 date_revised=date_revised,
-                 title=title,
-                 language=language,
-                 abstract=abstract,
-                 journal_title=journal_title,
-                 journal_issn=journal_issn,
-                 journal_abbr_iso=journal_abbr_iso,
-                 journal_abbr_med=journal_abbr_med))
+        journal_abbr_med = medline['MedlineJournalInfo']['MedlineTA']
+
+        if article_abstract:
+            if (pmid in match_dict['id']) or \
+                    (article_journal_issn in match_dict['issn'] or journal_issn in match_dict['issn']) or \
+                    (article_journal_title in match_dict['title'] or journal_title in match_dict['title']) or \
+                    (article_journal_abbr_iso in match_dict['abbr'] or journal_isoabbr in match_dict['abbr'] or
+                     journal_abbr_med in match_dict['abbr']):
+                count += 1
+                table.append(
+                    dict(pmid=pmid,
+                         date_completed=date_completed,
+                         date_revised=date_revised,
+                         article_title=article_title,
+                         article_language=article_language,
+                         article_abstract=article_abstract,
+                         article_journal_title=article_journal_title,
+                         article_journal_issn=article_journal_issn,
+                         article_journal_abbr_iso=article_journal_abbr_iso,
+                         journal_title=journal_title,
+                         journal_issn=journal_issn,
+                         journal_isoabbr=journal_isoabbr,
+                         journal_year=journal_year,
+                         journal_abbr_med=journal_abbr_med))
+            else:
+                filtered_articles += 1
     else:
         missing_abstracts += 1
-    # 1M rows per batch, equals to 1.1GB
+    # 1M rows per batch, equals to 1.2GB
     if count > 0 and count % 1000000 == 0:
         print('Processed:', count)
         _df = pd.DataFrame.from_records(table)
@@ -68,5 +105,10 @@ for row in tqdm(dataset["train"]):
         _batch += 1
         table = []
 
-print('Total number of abstracts:', count)
-print('Missing abstracts:', missing_abstracts)
+    print('Total number of articles after filtering:', count)
+    print('Missing abstracts:', missing_abstracts)
+    print('Dropped articles that had abstract:', filtered_articles)
+    _hours = (time() - start) // 3600
+    _minutes = (time() - start) % 3600 // 60
+    _seconds = (time() - start) % 60
+    print(f'The process took: {int(_hours):02d}:{int(_minutes):02d}:{int(_seconds):02d} hours')
