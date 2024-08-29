@@ -5,6 +5,8 @@ import datasets
 import pandas as pd
 from tqdm import tqdm
 
+MISSING_KEY = '*** MISSING ***'
+
 
 # extract and merge the unique values from the journals_df into a dictionary with combined keys
 def extract_unique_journals(journals_df):
@@ -14,13 +16,13 @@ def extract_unique_journals(journals_df):
     # iterate over the columns and update the dictionary with the unique values
     for col in jdf.columns:
         if 'issn' in col.lower():
-            _dict['issn'].update(jdf[col].str.split(',').explode().str.strip())
+            _dict['issn'].update(jdf[col].str.split(',').explode().str.strip().str.lower())
         elif 'title' in col.lower():
-            _dict['title'].update(jdf[col].str.strip())
+            _dict['title'].update(jdf[col].str.strip().str.lower())
         elif 'abbr' in col.lower():
-            _dict['abbr'].update(jdf[col].str.strip())
+            _dict['abbr'].update(jdf[col].str.strip().str.lower())
         elif 'id' in col.lower():
-            _dict['id'].update(jdf[col].str.strip())
+            _dict['id'].update(jdf[col])
     return _dict
 
 
@@ -60,19 +62,27 @@ if __name__ == '__main__':
         article_journal_issn = article_journal['ISSN']
         article_journal_abbr_iso = article_journal['ISOAbbreviation']
 
-        journal_issn = journal['ISSN']
-        journal_title = journal['Title']
-        journal_isoabbr = journal['ISOAbbreviation']
-        journal_year = journal['PubDate']['Year']
+        if journal:
+            journal_issn = journal['ISSN']
+            journal_title = journal['Title']
+            journal_isoabbr = journal['ISOAbbreviation']
+            journal_year = journal['PubDate']['Year']
+        else:
+            journal_issn = MISSING_KEY
+            journal_title = MISSING_KEY
+            journal_isoabbr = MISSING_KEY
+            journal_year = MISSING_KEY
 
         journal_abbr_med = medline['MedlineJournalInfo']['MedlineTA']
 
         if article_abstract:
             if (pmid in match_dict['id']) or \
-                    (article_journal_issn in match_dict['issn'] or journal_issn in match_dict['issn']) or \
-                    (article_journal_title in match_dict['title'] or journal_title in match_dict['title']) or \
-                    (article_journal_abbr_iso in match_dict['abbr'] or journal_isoabbr in match_dict['abbr'] or
-                     journal_abbr_med in match_dict['abbr']):
+                    (article_journal_issn.lower() in match_dict['issn'] or
+                     journal_issn.lower() in match_dict['issn']) or \
+                    (article_journal_title.lower() in match_dict['title']
+                     or journal_title.lower() in match_dict['title']) or \
+                    (article_journal_abbr_iso.lower() in match_dict['abbr'] or
+                     journal_isoabbr.lower() in match_dict['abbr'] or journal_abbr_med.lower() in match_dict['abbr']):
                 count += 1
                 table.append(
                     dict(pmid=pmid,
