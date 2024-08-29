@@ -55,13 +55,16 @@ for row in dataset["train"]:
                  journal_abbr_med=journal_abbr_med))
     else:
         missing_abstracts += 1
-    if count > 0 and count % 1000000 == 0:
+    if count > 0 and count % 100000 == 0:
         print('Processed:', count)
         _df = pd.DataFrame.from_records(table)
+        print(f'df info: {_df.info()}')
+        print('Saving batch...')
         _df.to_csv(f'psy_articles_{_batch}.csv', index=False)
+        print(f'Saved batch {_batch}')
+        print('will dump the table to free memory')
         _batch += 1
         table = []
-        print(f'Saved batch {_batch}')
 
 print('Total number of abstracts:', count)
 print('Missing abstracts:', missing_abstracts)
