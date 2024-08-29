@@ -1,5 +1,6 @@
 import datasets
 import pandas as pd
+from tqdm import tqdm
 
 # Load the dataset
 dataset = datasets.load_dataset("data/pubmed")
@@ -21,7 +22,7 @@ table = []
 count = 0
 missing_abstracts = 0
 _batch = 0
-for row in dataset["train"]:
+for row in tqdm(dataset["train"]):
     pmid = row['MedlineCitation']['PMID']
     date_completed = row['MedlineCitation']['DateCompleted']['Year']
     date_revised = row['MedlineCitation']['DateRevised']['Year']
