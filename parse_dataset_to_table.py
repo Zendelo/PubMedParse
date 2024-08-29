@@ -16,7 +16,6 @@ dataset = datasets.load_dataset("data/pubmed")
 
 journals_df = pd.read_csv('psy_journals_list.csv', header=0, sep=',')
 
-
 # Iterate over the dataset and create a table
 table = []
 count = 0
@@ -56,7 +55,7 @@ for row in dataset["train"]:
                  journal_abbr_med=journal_abbr_med))
     else:
         missing_abstracts += 1
-    if count % 1000000 == 0:
+    if count > 0 and count % 1000000 == 0:
         print('Processed:', count)
         _df = pd.DataFrame.from_records(table)
         _df.to_csv(f'psy_articles_{_batch}.csv', index=False)
