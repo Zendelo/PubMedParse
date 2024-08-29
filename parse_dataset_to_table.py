@@ -55,7 +55,8 @@ for row in dataset["train"]:
                  journal_abbr_med=journal_abbr_med))
     else:
         missing_abstracts += 1
-    if count > 0 and count % 100000 == 0:
+    # 1M rows per batch, equals to 1.1GB
+    if count > 0 and count % 1000000 == 0:
         print('Processed:', count)
         _df = pd.DataFrame.from_records(table)
         print(f'df info: {_df.info()}')
