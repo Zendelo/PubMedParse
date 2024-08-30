@@ -101,19 +101,27 @@ if __name__ == '__main__':
                          journal_abbr_med=journal_abbr_med))
             else:
                 filtered_articles += 1
+        else:
+            missing_abstracts += 1
+        # 1M rows per batch, equals to 1.2GB
+        if count > 0 and count % 1000000 == 0:
+            print('Processed:', count)
+            _df = pd.DataFrame.from_records(table)
+            print(f'df info: {_df.info()}')
+            print('Saving batch...')
+            _df.to_csv(f'psy_articles_{_batch}.csv', index=False)
+            print(f'Saved batch {_batch}')
+            print('will dump the table to free memory')
+            _batch += 1
+            table = []
     else:
-        missing_abstracts += 1
-    # 1M rows per batch, equals to 1.2GB
-    if count > 0 and count % 1000000 == 0:
+        # Save the remaining rows
         print('Processed:', count)
         _df = pd.DataFrame.from_records(table)
         print(f'df info: {_df.info()}')
-        print('Saving batch...')
+        print('Saving the remaining batch...')
         _df.to_csv(f'psy_articles_{_batch}.csv', index=False)
         print(f'Saved batch {_batch}')
-        print('will dump the table to free memory')
-        _batch += 1
-        table = []
 
     print('Total number of articles after filtering:', count)
     print('Missing abstracts:', missing_abstracts)
