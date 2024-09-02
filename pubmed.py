@@ -35,7 +35,8 @@ _HOMEPAGE = "https://www.nlm.nih.gov/databases/download/pubmed_medline.html"
 _LICENSE = ""
 
 _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
-# _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 2)]
+# Comment out the above line and uncomment the below line to download only 3 random files for testing purposes
+# _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in [9, 16, 1000]]
 
 MONTHS = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10,
           'Nov': 11, 'Dec': 12}
@@ -105,11 +106,9 @@ def deepupdate(target, src):
 def default_date():
     return {"Year": 0, "Month": 0, "Day": 0}
 
-
+# the default structure of an article
 def default_inline_article():
     return {
-        'Journal': {'ISSN': '', 'JournalIssue': {'Volume': '', 'Issue': '', 'PubDate': default_date()}, 'Title': '',
-                    'ISOAbbreviation': ''},
         "Abstract": {"AbstractText": ""},
         "ArticleTitle": "",
         # 'Pagination': {'MedlinePgn': datasets.Value('string')},
@@ -119,9 +118,15 @@ def default_inline_article():
         #     "Grant": [],
         # },
         "PublicationTypeList": {"PublicationType": []},
+        "Journal": {
+            'ISSN': '',
+            'JournalIssue': {'Volume': '', 'Issue': '', 'PubDate': default_date()},
+            'Title': '',
+            'ISOAbbreviation': ''
+        },
     }
 
-
+# the default structure of a pubmed object that contains an article
 def default_article():
     return {
         "MedlineCitation": {
@@ -138,7 +143,7 @@ def default_article():
         "PubmedData": {
             "ArticleIdList": [{"ArticleId": []}],
             "PublicationStatus": "",
-            # "History": {"PubMedPubDate": []},
+            "History": {"PubMedPubDate": []},
             # "ReferenceList": [],
         },
     }
@@ -219,6 +224,11 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                 data["Volume"] = ""
             if "Issue" not in data:
                 data["Issue"] = ""
+        if parentElement.tag == "PubDate":
+            if "Month" not in data:
+                data["Month"] = 0
+            if "Day" not in data:
+                data["Day"] = 0
         # elif parentElement.tag == "Grant" and "GrantID" not in data:
         #     data["GrantID"] = ""
 
@@ -250,8 +260,8 @@ class Pubmed(datasets.GeneratorBasedBuilder):
             'JournalIssue': {
                 'Volume': datasets.Value('string'),
                 'Issue': datasets.Value('string'),
+                'PubDate': Date,
             },
-            'PubDate': Date,
             'Title': datasets.Value('string'),
             'ISOAbbreviation': datasets.Value('string')
         }
@@ -293,7 +303,6 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                     "NumberOfReferences": datasets.Value("int32"),
                     "DateRevised": Date,
                     "Article": Article,
-                    "Journal": Journal,
                     "MedlineJournalInfo": MedlineJournalInfo,
                     # "ChemicalList": {"Chemical": datasets.Sequence(Chemical)},
                     # "CitationSubset": datasets.Value("string"),
@@ -304,7 +313,7 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                 "PubmedData": {
                     "ArticleIdList": datasets.Sequence({"ArticleId": datasets.Sequence(datasets.Value("string"))}),
                     "PublicationStatus": datasets.Value("string"),
-                    # "History": {"PubMedPubDate": datasets.Sequence(Date)},
+                    "History": {"PubMedPubDate": datasets.Sequence(Date)},
                     # "ReferenceList": datasets.Sequence(Reference),
                 },
             }
