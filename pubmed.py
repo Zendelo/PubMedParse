@@ -14,6 +14,16 @@
 # limitations under the License.
 """MEDLINE/PubMed data."""
 
+"""
+The script downloads the pubmed dataset and parses the XML files to extract the articles.
+This script was slightly adapted by Oleg Zendel from a Hugging Face dataset script to be used in a separate project.
+Note that the script downloads only the 'baseline' files, which are released annually in December.
+The script can be modified to download the 'update' files that are released daily in the following year.
+For more details, refer to: https://ftp.ncbi.nlm.nih.gov/pubmed/
+
+The script uses the 'datasets' library to download and parse the XML files.
+"""
+
 import copy
 import gzip
 import xml.etree.ElementTree as ET
@@ -33,7 +43,7 @@ NLM produces a baseline set of MEDLINE/PubMed citation records in XML format for
 _HOMEPAGE = "https://www.nlm.nih.gov/databases/download/pubmed_medline.html"
 
 _LICENSE = ""
-
+# The URLs to the data, the data is split in 1219 files so we need to download them all.
 _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
 # Comment out the above line and uncomment the below line to download only 3 random files for testing purposes
 # _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in [9, 16, 1000]]
@@ -106,6 +116,7 @@ def deepupdate(target, src):
 def default_date():
     return {"Year": 0, "Month": 0, "Day": 0}
 
+
 # the default structure of an article
 def default_inline_article():
     return {
@@ -125,6 +136,7 @@ def default_inline_article():
             'ISOAbbreviation': ''
         },
     }
+
 
 # the default structure of a pubmed object that contains an article
 def default_article():
