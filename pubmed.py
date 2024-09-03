@@ -486,6 +486,7 @@ if __name__ == '__main__':
     cache_dir = ensure_dir(os.path.join(output_dir.rsplit('/', 1)[0], "cache"))
 
     builder = Pubmed()
+    # set download config, using a single process as the bottleneck here is the download speed (wasn't properly tested)
     dc = datasets.download.DownloadConfig(cache_dir=cache_dir, num_proc=1, delete_extracted=False)
     logger.info(f'Cache dir for raw download files {dc.cache_dir}')
     builder.download_and_prepare(output_dir=output_dir,
