@@ -19,3 +19,5 @@ Then filter the data and parse it into a table format:
 ```bash
 python parse_datasaet_to_table.py
 ```
+
+### Note that the raw data will be downloaded from the PubMed API to the huggingface cache directory. To change the cache directory, set the `HF_HOME` environment variable to the desired directory before running the script.

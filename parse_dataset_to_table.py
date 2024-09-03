@@ -14,6 +14,7 @@ from time import time
 import datasets
 import pandas as pd
 from tqdm import tqdm
+from argparse import ArgumentParser
 
 
 # extract and merge the unique values from the journals_df into a dictionary with combined keys
@@ -37,11 +38,23 @@ def extract_unique_journals(journals_df):
 if __name__ == '__main__':
     # Start the timer
     start = time()
+
+    # Parse the arguments
+    parser = ArgumentParser()
+    parser.add_argument('--journals_list', type=str, default='psy_journals_list.csv',
+                        help='Path to the journals list CSV file')
+    parser.add_argument('--dataset', type=str, default='data/pubmed',
+                        help='Path to the pubmed dataset in huggingface-datasets format')
+    args = parser.parse_args()
+
+    data = args.dataset
+    journals_list = args.journals_list
+
     # Load the dataset
-    dataset = datasets.load_dataset("data/pubmed")
+    dataset = datasets.load_dataset(data)
 
     # Load the journals list
-    journals_df = pd.read_csv('psy_journals_list.csv', header=0, sep=',')
+    journals_df = pd.read_csv(journals_list, header=0, sep=',')
 
     # Extract unique values from the journals_df
     match_dict = extract_unique_journals(journals_df)
@@ -115,7 +128,7 @@ if __name__ == '__main__':
             print(f'df info: {_df.info()}')
             print('Saving batch...')
             # Save the DataFrame to a csv file, with the defined separator
-            _df.to_csv(f'psy_articles_{_batch}.csv', sep=',' ,index=False)
+            _df.to_csv(f'psy_articles_{_batch}.csv', sep=',', index=False)
             print(f'Saved batch {_batch}')
             print('will dump the table to free memory')
             _batch += 1

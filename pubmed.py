@@ -28,6 +28,7 @@ import copy
 import gzip
 import os
 import xml.etree.ElementTree as ET
+from argparse import ArgumentParser
 
 import datasets
 
@@ -439,11 +440,19 @@ def ensure_dir(file_path, create_if_not=True):
 
 
 if __name__ == '__main__':
+    # add argument parser
+    parser = ArgumentParser()
+    parser.add_argument("--output_dir", type=str, default="./data/pubmed/")
+    parser.add_argument("--num_proc")
+    args = parser.parse_args()
+    n_proc = args.num_proc
+    if n_proc is not None:
+        n_proc = int(n_proc)
     builder = Pubmed()
-    output_dir = ensure_dir('./data/pubmed/')
+    output_dir = ensure_dir(args.output_dir)
     builder.download_and_prepare(output_dir=output_dir,
                                  base_path=None,
                                  file_format="arrow",
-                                 num_proc=20,
+                                 num_proc=n_proc,
                                  storage_options=None)
     logger.info(builder.info)
