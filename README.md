@@ -21,3 +21,5 @@ python parse_datasaet_to_table.py
 ```
 
 ### Note that the raw data will be downloaded from the PubMed API to the huggingface cache directory. To change the cache directory, set the `HF_HOME` environment variable to the desired directory before running the script.
+
+Some articles were missing a year in the PubDate format and have the value in MedlineDate instead. Where a single year can be easily extracted it was added as PubDate as well, otherwise the date only appears in MedlineDate often in that format: '1977-1978 Winter'.
