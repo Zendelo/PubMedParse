@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """MEDLINE/PubMed data."""
+from thinc.layers.premap_ids import Optional
 
 """
 The script downloads the pubmed dataset and parses the XML files to extract the articles.
@@ -122,6 +123,10 @@ def default_date():
     return {"Year": 0, "Month": 0, "Day": 0}
 
 
+def default_pubdate():
+    return {"Year": 0, "Month": 0, "Day": 0, "MedlineDate": ""}
+
+
 # the default structure of an article
 def default_inline_article():
     return {
@@ -136,7 +141,7 @@ def default_inline_article():
         "PublicationTypeList": {"PublicationType": []},
         "Journal": {
             'ISSN': '',
-            'JournalIssue': {'Volume': '', 'Issue': '', 'PubDate': default_date()},
+            'JournalIssue': {'Volume': '', 'Issue': '', 'PubDate': default_pubdate()},
             'Title': '',
             'ISOAbbreviation': ''
         },
@@ -245,10 +250,11 @@ class Pubmed(datasets.GeneratorBasedBuilder):
             if "Year" not in data:
                 if parentElement[0].tag == 'MedlineDate':
                     _year = parentElement[0].text.split()[0]
-                    _year = int(_year) if _year.isdigit() else parentElement[0].text
-                else:
-                    _year = parentElement[0].text
-                data["Year"] = _year
+                    if _year.isdigit():
+                        data["Year"] = int(_year)
+                    else:
+                        data["Year"] = 0
+
         # elif parentElement.tag == "Grant" and "GrantID" not in data:
         #     data["GrantID"] = ""
 
@@ -274,13 +280,20 @@ class Pubmed(datasets.GeneratorBasedBuilder):
         #     "RegistryNumber": datasets.Value("string"),
         #     "NameOfSubstance": datasets.Value("string"),
         # }
+
+        PubDate = {
+            "Year": datasets.Value("int32"),
+            "Month": datasets.Value("int32"),
+            "Day": datasets.Value("int32"),
+            'MedlineDate': datasets.Value('string')
+        }
         # Too inconsistent in the data to be used
         Journal = {
             'ISSN': datasets.Value('string'),
             'JournalIssue': {
                 'Volume': datasets.Value('string'),
                 'Issue': datasets.Value('string'),
-                'PubDate': Date,
+                'PubDate': PubDate,
             },
             'Title': datasets.Value('string'),
             'ISOAbbreviation': datasets.Value('string')

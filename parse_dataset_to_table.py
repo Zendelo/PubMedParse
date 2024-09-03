@@ -89,6 +89,7 @@ if __name__ == '__main__':
         journal_abbr_iso = journal['ISOAbbreviation']
 
         journal_year = journal_issue['PubDate']['Year']
+        journal_med_year = journal_issue['PubDate']['MedlineDate']
 
         journal_abbr_med = medline['MedlineJournalInfo']['MedlineTA']
 
@@ -115,6 +116,7 @@ if __name__ == '__main__':
                         JournalISSN=journal_issn,
                         ISOAbbreviation=journal_abbr_iso,
                         PubDate=journal_year,
+                        MedlineDate=journal_med_year,
                         MedlineTA=journal_abbr_med
                     ))
             else:
