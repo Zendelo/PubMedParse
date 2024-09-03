@@ -26,13 +26,22 @@ The script uses the 'datasets' library to download and parse the XML files.
 
 import copy
 import gzip
+import logging
 import os
 import xml.etree.ElementTree as ET
 from argparse import ArgumentParser
 
 import datasets
 
-logger = datasets.logging.get_logger(__name__)
+logger = logging.getLogger(__name__)
+log_file = 'pubmed.log'
+logger.setLevel(logging.DEBUG)
+fh = logging.FileHandler(log_file)
+fh.setLevel(logging.DEBUG)
+logger.addHandler(fh)
+sh = logging.StreamHandler()
+sh.setLevel(logging.INFO)
+logger.addHandler(sh)
 
 _CITATION = """\
 Courtesy of the U.S. National Library of Medicine.
