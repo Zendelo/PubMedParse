@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """MEDLINE/PubMed data."""
-from thinc.layers.premap_ids import Optional
 
 """
 The script downloads the pubmed dataset and parses the XML files to extract the articles.
