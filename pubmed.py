@@ -466,10 +466,10 @@ if __name__ == '__main__':
         n_proc = int(n_proc)
 
     output_dir = ensure_dir(args.output_dir)
-    cache_dir = ensure_dir(os.path.join(output_dir, "cache"))
+    cache_dir = ensure_dir(os.path.join(output_dir.rsplit('/', 1)[0], "cache"))
 
     builder = Pubmed()
-    dc = datasets.download.DownloadConfig(cache_dir=cache_dir, num_proc=None)
+    dc = datasets.download.DownloadConfig(cache_dir=cache_dir, num_proc=1, delete_extracted=False)
     logger.info(f'Cache dir for raw download files {dc.cache_dir}')
     builder.download_and_prepare(output_dir=output_dir,
                                  download_config=dc,
