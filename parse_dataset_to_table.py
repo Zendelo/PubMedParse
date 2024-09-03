@@ -6,6 +6,9 @@ To modify the journals list, you can change the 'psy_journals_list.csv' file.
 The information about the pubmed tags, which serve as columns in the final data  can be found here:
 https://dtd.nlm.nih.gov/ncbi/pubmed/doc/out/180101/index.html
 
+
+The official documentation for the datasets library can be found here:
+https://huggingface.co/docs/datasets/index
 """
 
 from collections import defaultdict
