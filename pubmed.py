@@ -415,9 +415,9 @@ class Pubmed(datasets.GeneratorBasedBuilder):
 
 if __name__ == '__main__':
     builder = Pubmed()
-    builder.download_and_prepare(output_dir='data/pubmed',
+    builder.download_and_prepare(output_dir='./data/pubmed/',
                                  base_path=None,
                                  file_format="arrow",
-                                 num_proc=None,
+                                 num_proc=20,
                                  storage_options=None)
     print(builder.info)
