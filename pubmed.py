@@ -17,6 +17,8 @@
 """
 The script downloads the pubmed dataset and parses the XML files to extract the articles.
 This script was slightly adapted by Oleg Zendel from a Hugging Face dataset script to be used in a separate project.
+The official documentation for the datasets library can be found here: https://huggingface.co/docs/datasets/index
+
 Note that the script downloads only the 'baseline' files, which are released annually in December.
 The script can be modified to download the 'update' files that are released daily in the following year.
 For more details, refer to: https://ftp.ncbi.nlm.nih.gov/pubmed/
@@ -34,14 +36,6 @@ from argparse import ArgumentParser
 import datasets
 
 logger = logging.getLogger(__name__)
-log_file = 'pubmed.log'
-logger.setLevel(logging.DEBUG)
-fh = logging.FileHandler(log_file)
-fh.setLevel(logging.DEBUG)
-logger.addHandler(fh)
-sh = logging.StreamHandler()
-sh.setLevel(logging.INFO)
-logger.addHandler(sh)
 
 _CITATION = """\
 Courtesy of the U.S. National Library of Medicine.
@@ -55,9 +49,9 @@ _HOMEPAGE = "https://www.nlm.nih.gov/databases/download/pubmed_medline.html"
 
 _LICENSE = ""
 # The URLs to the data, the data is split in 1219 files so we need to download them all.
-_URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
+# _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in range(1, 1220)]
 # Comment out the above line and uncomment the below line to download only 3 random files for testing purposes
-# _URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in [9, 16, 1000]]
+_URLs = [f"https://ftp.ncbi.nlm.nih.gov/pubmed/baseline/pubmed24n{i:04d}.xml.gz" for i in [9, 16, 100]]
 
 MONTHS = {'Jan': 1, 'Feb': 2, 'Mar': 3, 'Apr': 4, 'May': 5, 'Jun': 6, 'Jul': 7, 'Aug': 8, 'Sep': 9, 'Oct': 10,
           'Nov': 11, 'Dec': 12}
@@ -248,10 +242,8 @@ class Pubmed(datasets.GeneratorBasedBuilder):
             if "Issue" not in data:
                 data["Issue"] = ""
         if parentElement.tag == "PubDate":
-            if "Month" not in data:
-                data["Month"] = 0
-            if "Day" not in data:
-                data["Day"] = 0
+            if "Year" not in data:
+                data["Year"] = data.get("MedlineDate", 0)
         # elif parentElement.tag == "Grant" and "GrantID" not in data:
         #     data["GrantID"] = ""
 
@@ -448,6 +440,21 @@ def ensure_dir(file_path, create_if_not=True):
     return directory
 
 
+def init_logger(logger, log_file='pubmed.log'):
+    logger.setLevel(logging.DEBUG)
+    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
+    fh = logging.FileHandler(log_file)
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+    sh = logging.StreamHandler()
+    sh.setLevel(logging.INFO)
+    logger.addHandler(sh)
+    return logger
+
+
+logger = init_logger(logger)
+
 if __name__ == '__main__':
     # add argument parser
     parser = ArgumentParser()
@@ -457,9 +464,15 @@ if __name__ == '__main__':
     n_proc = args.num_proc
     if n_proc is not None:
         n_proc = int(n_proc)
-    builder = Pubmed()
+
     output_dir = ensure_dir(args.output_dir)
+    cache_dir = ensure_dir(os.path.join(output_dir, "cache"))
+
+    builder = Pubmed()
+    dc = datasets.download.DownloadConfig(cache_dir=cache_dir, num_proc=None)
+    logger.info(f'Cache dir for raw download files {dc.cache_dir}')
     builder.download_and_prepare(output_dir=output_dir,
+                                 download_config=dc,
                                  base_path=None,
                                  file_format="arrow",
                                  num_proc=n_proc,
