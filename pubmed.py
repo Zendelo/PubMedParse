@@ -26,6 +26,7 @@ The script uses the 'datasets' library to download and parse the XML files.
 
 import copy
 import gzip
+import os
 import xml.etree.ElementTree as ET
 
 import datasets
@@ -413,11 +414,36 @@ class Pubmed(datasets.GeneratorBasedBuilder):
                     id_ += 1
 
 
+def ensure_dir(file_path, create_if_not=True):
+    """
+    The function ensures the dir exists,
+    if it doesn't it creates it and returns the path or raises FileNotFoundError
+    In case file_path is an existing file, returns the path of the parent directory
+    """
+    # tilde expansion
+    file_path = os.path.normpath(os.path.expanduser(file_path))
+    if os.path.isfile(file_path):
+        directory = os.path.dirname(file_path)
+    else:
+        directory = file_path
+    if not os.path.exists(directory):
+        if create_if_not:
+            try:
+                os.makedirs(directory)
+            except FileExistsError:
+                # This exception was added for multiprocessing, in case multiple processes try to create the directory
+                pass
+        else:
+            raise FileNotFoundError(f"The directory {directory} doesnt exist, create it or pass create_if_not=True")
+    return directory
+
+
 if __name__ == '__main__':
     builder = Pubmed()
-    builder.download_and_prepare(output_dir='./data/pubmed/',
+    output_dir = ensure_dir('./data/pubmed/')
+    builder.download_and_prepare(output_dir=output_dir,
                                  base_path=None,
                                  file_format="arrow",
                                  num_proc=20,
                                  storage_options=None)
-    print(builder.info)
+    logger.info(builder.info)
