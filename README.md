@@ -1,5 +1,7 @@
 # PubMedParse
 
+There are two scripts in this repository. The first script `pubmed.py` downloads the raw data from the PubMed API (43GB) into the cache directory (defined in the code) and then parses the data into a huggingface dataset format, saved as arrow (format) files in the `output_dir` directory. The second script `parse_dataset_to_table.py` reads the arrow files and parses the data into a table format, saved as a csv file in the `output_dir` directory.
+
 Create a new environment and install the requirements:
 
 ```bash
