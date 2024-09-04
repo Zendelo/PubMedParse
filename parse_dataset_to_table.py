@@ -48,13 +48,19 @@ if __name__ == '__main__':
                         help='Path to the journals list CSV file')
     parser.add_argument('--dataset', type=str, default='data/pubmed',
                         help='Path to the pubmed dataset in huggingface-datasets format')
+    parser.add_argument('--output', type=str, default='psy_articles', help='Path to the output CSV file')
     args = parser.parse_args()
 
     data = args.dataset
     journals_list = args.journals_list
+    output = args.output
+    output = output.split('.')[0]
+
+    #TODO: add the relevant cache dir here, the load should be from there
 
     # Load the dataset
-    dataset = datasets.load_dataset(data)
+    # dataset = datasets.load_dataset(data)
+    dataset = datasets.Dataset.from_file(data) # test it
 
     # Load the journals list
     journals_df = pd.read_csv(journals_list, header=0, sep=',')
@@ -133,7 +139,7 @@ if __name__ == '__main__':
             print(f'df info: {_df.info()}')
             print('Saving batch...')
             # Save the DataFrame to a csv file, with the defined separator
-            _df.to_csv(f'psy_articles_{_batch}.csv', sep=',', index=False)
+            _df.to_csv(f'{output}_{_batch}.csv', sep=',', index=False)
             print(f'Saved batch {_batch}')
             print('will dump the table to free memory')
             _batch += 1
@@ -147,7 +153,7 @@ if __name__ == '__main__':
         print(f'df info: {_df.info()}')
         print('Saving the remaining batch...')
         # Save the DataFrame to a csv file, with the defined separator
-        _df.to_csv(f'psy_articles_{_batch}.csv', index=False)
+        _df.to_csv(f'{output}_{_batch}.csv', index=False)
         print(f'Saved batch {_batch}')
 
     print('Total number of articles after filtering:', count)
