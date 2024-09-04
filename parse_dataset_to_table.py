@@ -10,14 +10,16 @@ https://dtd.nlm.nih.gov/ncbi/pubmed/doc/out/180101/index.html
 The official documentation for the datasets library can be found here:
 https://huggingface.co/docs/datasets/index
 """
-
+import os
+from argparse import ArgumentParser
 from collections import defaultdict
 from time import time
 
 import datasets
 import pandas as pd
 from tqdm import tqdm
-from argparse import ArgumentParser
+
+from pubmed import ensure_dir
 
 
 # extract and merge the unique values from the journals_df into a dictionary with combined keys
@@ -56,11 +58,9 @@ if __name__ == '__main__':
     output = args.output
     output = output.split('.')[0]
 
-    #TODO: add the relevant cache dir here, the load should be from there
-
+    cache_dir = ensure_dir(os.path.join(data.rsplit('/', 1)[0], "cache"))
     # Load the dataset
-    # dataset = datasets.load_dataset(data)
-    dataset = datasets.Dataset.from_file(data) # test it
+    dataset = datasets.load_dataset(data, cache_dir=cache_dir)
 
     # Load the journals list
     journals_df = pd.read_csv(journals_list, header=0, sep=',')
