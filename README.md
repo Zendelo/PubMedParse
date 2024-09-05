@@ -1,6 +1,6 @@
 # PubMedParse
 
-There are two scripts in this repository. The first script `pubmed.py` downloads the raw data from the PubMed API (43GB)
+There are two scripts in this repository. The first script `pubmed.py` downloads the raw data from the PubMed FTP server (43GB)
 into the cache directory (defined in the code) and then parses the data into a huggingface dataset format, saved as
 arrow (format) files in the `output_dir` directory.<br>
 The second script `parse_dataset_to_table.py` reads the arrow files
@@ -42,10 +42,7 @@ python parse_datasaet_to_table.py --dataset data/pubmed --output psy_articles.cs
 `journals_list` is the name of the csv file that contains the list of journals to filter the data.<br>
 The filtered data contains **490,287** articles, and it's 564MB in size.
 
-### Note that the raw data will be downloaded from the PubMed API to the huggingface cache directory. To change the cache directory, set the
-
-`HF_HOME` environment variable to the desired directory before running the script.
-
+# Notes
 Some articles were missing a year in the PubDate format and have the value in MedlineDate instead. Where a single year
 can be easily extracted it was added as PubDate as well, otherwise the date only appears in MedlineDate often in that
 format: '1977-1978 Winter'.
