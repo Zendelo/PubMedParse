@@ -248,9 +248,12 @@ class Pubmed(datasets.GeneratorBasedBuilder):
         if parentElement.tag == "PubDate":
             if "Year" not in data:
                 if parentElement[0].tag == 'MedlineDate':
-                    _year = parentElement[0].text.split()[0]
+                    _year = parentElement[0].text.split(None, maxsplit=1)[0]
+                    year_ = parentElement[0].text.rsplit(None, maxsplit=1)[-1]
                     if _year.isdigit():
                         data["Year"] = int(_year)
+                    elif year_.isdigit():
+                        data["Year"] = int(year_)
                     else:
                         data["Year"] = 0
 
