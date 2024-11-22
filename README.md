@@ -6,6 +6,16 @@ arrow (format) files in the `output_dir` directory.<br>
 The second script `parse_dataset_to_table.py` reads the arrow files
 and parses the data into a table format, saved as a csv file.
 
+First, start by creating a directory and then cloning this repository.
+You'll need to have write permissions in the directory that contains the cloned git directory:
+```bash
+mkdir repos
+cd repos
+git clone https://github.com/Zendelo/PubMedParse.git
+cd PubMedParse
+```
+* If you already have this repo locally, update it and resolve all conflicts.
+
 Create a new environment and install the requirements:
 
 ```bash
