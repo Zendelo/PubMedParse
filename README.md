@@ -50,6 +50,8 @@ python parse_datasaet_to_table.py --dataset data/pubmed --output psy_articles.cs
 `dataset` is the directory where the parsed data is saved, the same as the `output_dir` in the previous step.<br>
 `output` is the name of the csv file where the filtered data will be saved.<br>
 `journals_list` is the name of the csv file that contains the list of journals to filter the data.<br>
+To generate psy_journals_list.csv file used here refer to the repository https://github.com/naomibaes/psych-journals-list<br>
+
 The filtered data contains **490,287** articles, and it's 564MB in size.
 
 # Notes
